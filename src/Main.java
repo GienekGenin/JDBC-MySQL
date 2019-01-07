@@ -16,30 +16,15 @@ public class Main {
             Class.forName("com.mysql.cj.jdbc.Driver");
             Connection con = DriverManager.getConnection("jdbc:mysql://localhost:3306/mydb?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC", "root", "admin");
             Statement statement = con.createStatement();
-            statement.executeUpdate("CREATE TABLE IF NOT EXISTS Books (id MEDIUMINT NOT NULL AUTO_INCREMENT, name CHAR(30) NOT NULL, img BLOB, PRIMARY KEY (id))");
+            statement.execute("drop table if exists Books");
+            statement.executeUpdate("CREATE TABLE IF NOT EXISTS Books (id MEDIUMINT NOT NULL AUTO_INCREMENT, name CHAR(30) NOT NULL, PRIMARY KEY (id))");
+            statement.executeUpdate("INSERT INTO Books  (NAME) VALUE ('C++')");
+            statement.executeUpdate("INSERT INTO Books  (NAME) VALUE ('Java')");
 
-            try {
-                BufferedImage image = ImageIO.read(new File("D:\\photos\\rr.jpg"));
-                Blob blob = con.createBlob();
-                try (OutputStream outputStream = blob.setBinaryStream(1)){
-                    ImageIO.write(image,"jpg", outputStream);
-                }
-                PreparedStatement statement1 = con.prepareStatement("INSERT INTO Books (NAME , img) VALUES (?,?)");
-                statement1.setString(1,"test");
-                statement1.setBlob(2, blob);
-                statement1.execute();
-
-                ResultSet set = statement.executeQuery("SELECT * FROM Books");
-                while (set.next()){
-                    Blob blob1 = set.getBlob("img");
-                    BufferedImage image1 = ImageIO.read(blob1.getBinaryStream());
-                    File outputFile = new File("saved.jpg");
-                    ImageIO.write(image1, "jpg", outputFile);
-                }
-
-            } catch (IOException e) {
-                e.printStackTrace();
-            }
+            CallableStatement callableStatement = con.prepareCall("{call BookCount(?)}");
+            callableStatement.registerOutParameter(1, Types.INTEGER);
+            callableStatement.execute();
+            System.out.println(callableStatement.getInt(1));
 
             System.out.println("DB connection success");
         } catch (ClassNotFoundException | SQLException e) {
